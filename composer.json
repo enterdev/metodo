@@ -1,0 +1,29 @@
+{
+    "name": "enterdev/metodo",
+    "type": "yii2-extension",
+    "description": "Metodo",
+    "license": "MIT",
+    "authors": [{
+            "name": "Evgeny Vihnevich",
+            "email": "ev@enter.lv"
+        }, {
+            "name": "Ilia Smyshlaev",
+            "email": "is@enter.lv"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "enterdev\\metodo\\": "src/"
+        }
+    },
+    "post-install-cmd": [
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0.0",
+        "enterdev/cron-expression": "dev-master"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*",
+        "phpunit/dbunit": "*"
+    }
+}

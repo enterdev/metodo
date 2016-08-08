@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<dataset>
+    <table name="metodo_cron">
+        <column>id</column>
+        <column>tag</column>
+        <column>week_day</column>
+        <column>day</column>
+        <column>month</column>
+        <column>year</column>
+        <column>hour</column>
+        <column>minute</column>
+        <column>second</column>
+        <column>exec_class</column>
+        <column>method</column>
+        <column>data</column>
+        <column>time_zone</column>
+    </table>
+
+    <table name="metodo_task">
+        <column>id</column>
+        <column>time</column>
+        <column>cron_id</column>
+        <column>exec_class</column>
+        <column>method</column>
+        <column>data</column>
+    </table>
+</dataset>
