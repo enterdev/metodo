@@ -20,7 +20,7 @@
     ],
     "require": {
         "yiisoft/yii2": "~2.0.0",
-        "enterdev/cron-expression": "dev-master"
+        "enterdev/cron-expression": "~1.2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "*",
