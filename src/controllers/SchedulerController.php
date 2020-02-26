@@ -2,6 +2,7 @@
 namespace enterdev\metodo\controllers;
 
 use yii\console\Controller;
+use yii\helpers\Json;
 use yii\log\Logger;
 
 use enterdev\metodo\components\TimeZoneHelper;
@@ -9,8 +10,8 @@ use enterdev\metodo\models\MetodoTask;
 
 class SchedulerController extends Controller
 {
-    protected $loopLimit = 0;
-    protected $yiiBinPath = 'yii';
+    protected $loopLimit  = 0;
+    protected $yiiBinPath = './yii';
 
     public function actionCleanUp()
     {
@@ -20,8 +21,7 @@ class SchedulerController extends Controller
         if (!$keepSeconds)
             return;
 
-        /** @var MetodoTask[] $tasks */
-        $time  = new \DateTime();
+        $time = new \DateTime();
         $time->sub(new \DateInterval('PT' . $keepSeconds . 'S'));
 
         MetodoTask::deleteAll('time < :time AND `status` = "success"', ['time' => $time->format('Y-m-d H:i:s')]);
@@ -29,12 +29,19 @@ class SchedulerController extends Controller
 
 
     //FIXME: should this be explicitly run in UTC?
-    public function actionDaemon()
+    public function actionDaemon($supportedJobs = null, $unsupportedJobs = null)
     {
         echo '[' . date('Y-m-d H:i:s') . '] Daemon Started.' . PHP_EOL;
         set_time_limit(0);
         $i = 0;
         TimeZoneHelper::set('UTC');
+
+        if ($supportedJobs)
+            $supportedJobs = Json::decode($supportedJobs);
+
+        if ($unsupportedJobs)
+            $unsupportedJobs = Json::decode($unsupportedJobs);
+
         while (true)
         {
             if (($this->loopLimit > 0) && ($i++ > $this->loopLimit))
@@ -43,15 +50,23 @@ class SchedulerController extends Controller
             sleep(1);
             try
             {
-                /** @var MetodoTask[] $tasks */
-                $time  = new \DateTime();
-                $tasks = MetodoTask::find()
+                $time        = new \DateTime();
+                $tasksFinder = MetodoTask::find()
                     ->with('cron')
-                    ->where('time <= :time AND `status` = "scheduled"', ['time' => $time->format('Y-m-d H:i:s')])
-                    ->all();
+                    ->where('time <= :time AND `status` = "scheduled"', ['time' => $time->format('Y-m-d H:i:s')]);
+
+                if ($supportedJobs)
+                    $tasksFinder->andWhere(['IN', 'method', $supportedJobs]);
+
+                if ($unsupportedJobs)
+                    $tasksFinder->andWhere(['NOT IN', 'method', $unsupportedJobs]);
+
+                /** @var MetodoTask[] $tasks */
+                $tasks = $tasksFinder->all();
 
                 foreach ($tasks as $task)
                 {
+                    $out = '';
                     $task->updateAttributes([
                         'status'     => 'running',
                         'start_time' => date('Y-m-d H:i:s')
