@@ -48,23 +48,28 @@ class SchedulerController extends Controller
                 break;
 
             sleep(1);
+
+            $transaction = \Yii::$app->db->beginTransaction();
             try
             {
                 $time        = new \DateTime();
-                $tasksFinder = MetodoTask::find()
+                $taskFinder = MetodoTask::find()
                     ->with('cron')
-                    ->where('time <= :time AND `status` = "scheduled"', ['time' => $time->format('Y-m-d H:i:s')]);
+                    ->where(
+                        'time <= :time AND `status` = "scheduled" LIMIT 1 FOR UPDATE SKIP LOCKED',
+                        ['time' => $time->format('Y-m-d H:i:s')]
+                    );
 
                 if ($supportedJobs)
-                    $tasksFinder->andWhere(['IN', 'method', $supportedJobs]);
+                    $taskFinder->andWhere(['IN', 'method', $supportedJobs]);
 
                 if ($unsupportedJobs)
-                    $tasksFinder->andWhere(['NOT IN', 'method', $unsupportedJobs]);
+                    $taskFinder->andWhere(['NOT IN', 'method', $unsupportedJobs]);
 
-                /** @var MetodoTask[] $tasks */
-                $tasks = $tasksFinder->all();
+                /** @var MetodoTask $task */
+                $task = $taskFinder->one();
 
-                foreach ($tasks as $task)
+                if ($task)
                 {
                     $out = '';
                     $task->updateAttributes([
@@ -85,11 +90,17 @@ class SchedulerController extends Controller
                     ]);
 
                     if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
+                    {
+                        $transaction->commit();
                         throw new \Exception('Failed to reschedule a task: #' . $task->id);
+                    }
                 }
+
+                $transaction->commit();
             }
             catch (\Exception $e)
             {
+                $transaction->rollBack();
                 \Yii::$app->log->logger->log($e->getMessage(), Logger::LEVEL_ERROR);
             }
         }
