@@ -49,4 +49,26 @@ class MetodoTask extends \enterdev\metodo\models\base\BMetodoTask
 
         return false;
     }
+
+    /**
+     * @param int        $taskResult
+     * @param \DateTime  $time
+     *
+     * @return bool
+     */
+    public function rescheduleIfNeeded($taskResult, $time)
+    {
+        if (!$this->cron)
+            return true;
+
+        $rescheduleNeeded =
+            ($this->cron->reschedule_on == MetodoCron::RESCHEDULE_ON_FINISH) ||
+            (($this->cron->reschedule_on == MetodoCron::RESCHEDULE_ON_SUCCESS) && ($taskResult == 0)) ||
+            (($this->cron->reschedule_on == MetodoCron::RESCHEDULE_ON_FAIL) && ($taskResult != 0));
+
+        if ($rescheduleNeeded)
+            return $this->reschedule($time);
+        else
+            return true;
+    }
 }
