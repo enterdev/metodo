@@ -91,7 +91,6 @@ class SchedulerController extends Controller
 
                     if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
                     {
-                        $transaction->commit();
                         throw new \Exception('Failed to reschedule a task: #' . $task->id);
                     }
                 }
