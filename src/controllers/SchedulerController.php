@@ -52,19 +52,29 @@ class SchedulerController extends Controller
             $transaction = \Yii::$app->db->beginTransaction();
             try
             {
-                $time        = new \DateTime();
+                $time = new \DateTime();
+
+                $where = 'time <= :time AND `status` = "scheduled"';
+                if ($supportedJobs)
+                {
+                    $supported = '"' . implode('","', $supportedJobs) . '"';
+                    $where .= " AND `method` IN ($supported)";
+                }
+
+                if ($unsupportedJobs)
+                {
+                    $unsupported = '"' . implode('","', $unsupportedJobs) . '"';
+                    $where .= " AND `method` NOT IN ($unsupported)";
+                }
+
+                $where .= ' LIMIT 1 FOR UPDATE SKIP LOCKED';
+
                 $taskFinder = MetodoTask::find()
                     ->with('cron')
                     ->where(
-                        'time <= :time AND `status` = "scheduled" LIMIT 1 FOR UPDATE SKIP LOCKED',
+                        $where,
                         ['time' => $time->format('Y-m-d H:i:s')]
                     );
-
-                if ($supportedJobs)
-                    $taskFinder->andWhere(['IN', 'method', $supportedJobs]);
-
-                if ($unsupportedJobs)
-                    $taskFinder->andWhere(['NOT IN', 'method', $unsupportedJobs]);
 
                 /** @var MetodoTask $task */
                 $task = $taskFinder->one();
