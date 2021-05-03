@@ -83,7 +83,7 @@ class SchedulerController extends Controller
                 {
                     $out = '';
                     $task->updateAttributes([
-                        'status'     => 'running',
+                        'status'     => MetodoTask::STATUS_RUNNING,
                         'start_time' => date('Y-m-d H:i:s')
                     ]);
 
@@ -95,11 +95,11 @@ class SchedulerController extends Controller
                     //TODO: implement collision resolution
                     exec(escapeshellcmd($cmd), $out, $taskResult);
                     $task->updateAttributes([
-                        'status'   => ($taskResult == 0) ? 'success' : 'failed',
+                        'status'   => ($taskResult == 0) ? MetodoTask::STATUS_SUCCESS : MetodoTask::STATUS_FAILED,
                         'end_time' => date('Y-m-d H:i:s')
                     ]);
 
-                    if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
+                    if (!$task->rescheduleIfNeeded($taskResult, $time))
                     {
                         throw new \Exception('Failed to reschedule a task: #' . $task->id);
                     }
@@ -117,29 +117,5 @@ class SchedulerController extends Controller
         echo '[' . date('Y-m-d H:i:s') . '] Daemon Stopped.' . PHP_EOL;
 
         return self::EXIT_CODE_NORMAL;
-    }
-
-    /**
-     * @param MetodoTask $task
-     *
-     * @param int        $taskResult
-     * @param \DateTime  $time
-     *
-     * @return bool
-     */
-    private function rescheduleIfNeeded($task, $taskResult, $time)
-    {
-        if (!$task->cron)
-            return true;
-
-        $rescheduleNeeded =
-            ($task->cron->reschedule_on == 'finish') ||
-            (($task->cron->reschedule_on == 'success') && ($taskResult == 0)) ||
-            (($task->cron->reschedule_on == 'fail') && ($taskResult != 0));
-
-        if ($rescheduleNeeded)
-            return $task->reschedule($time);
-        else
-            return true;
     }
 }

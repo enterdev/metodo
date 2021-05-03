@@ -56,7 +56,7 @@ class MetodoCron extends \enterdev\metodo\models\base\BMetodoCron
             'alt_exec_class' => $this->alt_exec_class,
             'alt_method'     => $this->alt_method,
             'alt_data'       => $this->alt_data,
-            'status'         => 'scheduled',
+            'status'         => MetodoTask::STATUS_SCHEDULED,
         ];
     }
 

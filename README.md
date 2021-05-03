@@ -5,7 +5,7 @@ This extension provides scheduled task capability [Yii framework 2.0](http://www
 
 The extension allows creating repeatable tasks or one-time tasks in the future.
 
-Metodo is released under the MIT License. See the bundled [LICENSE.md](LICENSE.md) file. 
+Metodo is released under the MIT License. See the bundled [LICENSE.md](LICENSE.md) file.
 
 Installation
 ============
@@ -36,8 +36,15 @@ Add metodo to your config modules
 Running the daemon
 ------------------
 run on supervisor or similar type of software:
-```php
+```shell
 yii metodo/scheduler/daemon
+```
+
+Running single task
+------------------
+where `123` it`s this ID task
+```shell
+yii metodo/task/execute 123
 ```
 
 Creating a cron
