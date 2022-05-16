@@ -101,7 +101,7 @@ class SchedulerController extends Controller
 
                     if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
                     {
-                        throw new \Exception('Failed to reschedule a task: #' . $task->id);
+                        \Yii::$app->log->logger->log('Failed to reschedule a task: #' . $task->id, Logger::LEVEL_WARNING);
                     }
                 }
 
