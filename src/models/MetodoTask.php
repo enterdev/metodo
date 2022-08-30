@@ -45,8 +45,33 @@ class MetodoTask extends \enterdev\metodo\models\base\BMetodoTask
             if ($newTask && $newTask->save())
                 return true;
         }
-        catch (\Exception $e) { }
+        catch (\Exception $e)
+        {
+        }
 
         return false;
+    }
+
+    public function shouldRescheduleOnCompletion()
+    {
+        return $this->cron
+            && $this->cron->reschedule_on != 'start'
+            && $this->cron->reschedule_on != "never"
+            && !$this->isExactDateTime();
+    }
+
+    public function shouldRescheduleOnStart()
+    {
+        return $this->cron
+            && $this->cron->reschedule_on == 'start'
+            && !$this->isExactDateTime();
+    }
+
+    private function isExactDateTime()
+    {
+        foreach ($this->cron->getAttributes(["second", "minute", "hour", "day", "month", "year"]) as $attribute)
+            if ($attribute == null)
+                return false;
+        return true;
     }
 }

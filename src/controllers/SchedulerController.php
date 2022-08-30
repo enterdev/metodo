@@ -87,7 +87,7 @@ class SchedulerController extends Controller
                         'start_time' => date('Y-m-d H:i:s')
                     ]);
 
-                    if ($task->cron && $task->cron->reschedule_on == 'start')
+                    if ($task->shouldRescheduleOnStart())
                         $task->reschedule($time);
 
                     $cmd = $this->yiiBinPath . ' metodo/worker/work ' . (int)$task->id;
@@ -129,7 +129,7 @@ class SchedulerController extends Controller
      */
     private function rescheduleIfNeeded($task, $taskResult, $time)
     {
-        if (!$task->cron)
+        if (!$task->shouldRescheduleOnCompletion())
             return true;
 
         $rescheduleNeeded =
