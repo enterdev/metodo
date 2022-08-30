@@ -54,7 +54,7 @@ class MetodoTask extends \enterdev\metodo\models\base\BMetodoTask
 
     public function shouldRescheduleOnCompletion()
     {
-        return $this->cron
+        return $this->cron_id
             && $this->cron->reschedule_on != 'start'
             && $this->cron->reschedule_on != "never"
             && !$this->isExactDateTime();
@@ -62,7 +62,7 @@ class MetodoTask extends \enterdev\metodo\models\base\BMetodoTask
 
     public function shouldRescheduleOnStart()
     {
-        return $this->cron
+        return $this->cron_id
             && $this->cron->reschedule_on == 'start'
             && !$this->isExactDateTime();
     }

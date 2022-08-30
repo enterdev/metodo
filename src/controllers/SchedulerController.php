@@ -47,8 +47,6 @@ class SchedulerController extends Controller
             if (($this->loopLimit > 0) && ($i++ > $this->loopLimit))
                 break;
 
-            sleep(1);
-
             $transaction = \Yii::$app->db->beginTransaction();
             try
             {
@@ -100,12 +98,16 @@ class SchedulerController extends Controller
                     ]);
 
                     if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
-                    {
                         \Yii::$app->log->logger->log('Failed to reschedule a task: #' . $task->id, Logger::LEVEL_WARNING);
-                    }
-                }
 
-                $transaction->commit();
+                    $transaction->commit();
+                }
+                else
+                {
+                    // Commit and release lock first, then sleep
+                    $transaction->commit();
+                    sleep(1);
+                }
             }
             catch (\Exception $e)
             {
