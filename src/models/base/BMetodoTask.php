@@ -8,6 +8,7 @@ use \enterdev\metodo\models\MetodoCron;
  * This is the model class for table "metodo_task".
  *
  * @property string     $id
+ * @property string     $tag
  * @property string     $time
  * @property integer    $cron_id
  * @property string     $exec_class
@@ -48,7 +49,7 @@ abstract class BMetodoTask extends \yii\db\ActiveRecord
             [['cron_id', 'percentage'], 'integer'],
             [['data', 'alt_data', 'status'], 'string'],
             [['exec_class', 'alt_exec_class'], 'string', 'max' => 128],
-            [['method', 'alt_method'], 'string', 'max' => 32],
+            [['tag', 'method', 'alt_method'], 'string', 'max' => 32],
             [['cron_id'], 'exist', 'skipOnError' => true, 'targetClass' => \enterdev\metodo\models\MetodoCron::class, 'targetAttribute' => ['cron_id' => 'id']],
         ];
     }
@@ -60,6 +61,7 @@ abstract class BMetodoTask extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
+            'tag' => 'Tag',
             'time' => 'Time',
             'cron_id' => 'Cron ID',
             'exec_class' => 'Exec Class',
