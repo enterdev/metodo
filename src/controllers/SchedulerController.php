@@ -91,7 +91,8 @@ class SchedulerController extends Controller
                 /** @var MetodoTask $task */
                 $task = MetodoTask::find()
                     ->with('cron')
-                    ->where('id = :id LIMIT 1 FOR UPDATE SKIP LOCKED', ['id' => $foundTaskId]);
+                    ->where('id = :id LIMIT 1 FOR UPDATE SKIP LOCKED', ['id' => $foundTaskId])
+                    ->one();
 
                 if ($task)
                 {
