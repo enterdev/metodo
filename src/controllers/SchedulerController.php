@@ -68,14 +68,30 @@ class SchedulerController extends Controller
                 $where .= ' LIMIT 1 FOR UPDATE SKIP LOCKED';
 
                 $taskFinder = MetodoTask::find()
-                    ->with('cron')
+                    ->select("id")
                     ->where(
                         $where,
                         ['time' => $time->format('Y-m-d H:i:s')]
                     );
 
+                $foundTaskId = $taskFinder->scalar();
+
+                // Release the lock because it probably holds more than one row
+                $transaction->rollBack();
+
+                if (!$foundTaskId)
+                {
+                    sleep(1);
+                    continue;
+                }
+
+                $transaction = \Yii::$app->db->beginTransaction();
+
+                // Acquire the lock for a particular row (use of primary key)
                 /** @var MetodoTask $task */
-                $task = $taskFinder->one();
+                $task = MetodoTask::find()
+                    ->with('cron')
+                    ->where('id = :id LIMIT 1 FOR UPDATE SKIP LOCKED', ['id' => $foundTaskId]);
 
                 if ($task)
                 {
@@ -104,9 +120,8 @@ class SchedulerController extends Controller
                 }
                 else
                 {
-                    // Commit and release lock first, then sleep
-                    $transaction->commit();
-                    sleep(1);
+                    // We found our row, but someone took the lock first, try again immediately
+                    $transaction->rollBack();
                 }
             }
             catch (\Exception $e)
@@ -131,6 +146,8 @@ class SchedulerController extends Controller
      */
     private function rescheduleIfNeeded($task, $taskResult, $time)
     {
+        $task->refresh();
+
         if (!$task->shouldRescheduleOnCompletion())
             return true;
 
