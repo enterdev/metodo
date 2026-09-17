@@ -109,11 +109,6 @@ class SchedulerController extends Controller
                     // Commit and release lock first, then sleep
                     $transaction->commit();
                 }
-                else
-                {
-                    // We found our row, but someone took the lock first, try again immediately
-                    $transaction->rollBack();
-                }
             }
             catch (\Exception $e)
             {
