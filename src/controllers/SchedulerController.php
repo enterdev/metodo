@@ -108,6 +108,7 @@ class SchedulerController extends Controller
                 {
                     // Commit and release lock first, then sleep
                     $transaction->commit();
+                    sleep(1);
                 }
             }
             catch (\Exception $e)
