@@ -1,4 +1,4 @@
-<?
+<?php
 namespace enterdev\metodo\controllers;
 
 use yii\console\Controller;
@@ -42,6 +42,8 @@ class SchedulerController extends Controller
         if ($unsupportedJobs)
             $unsupportedJobs = Json::decode($unsupportedJobs);
 
+        \Yii::$app->db->createCommand('SET TRANSACTION ISOLATION LEVEL READ COMMITTED;')->execute();
+
         while (true)
         {
             if (($this->loopLimit > 0) && ($i++ > $this->loopLimit))
@@ -68,31 +70,14 @@ class SchedulerController extends Controller
                 $where .= ' LIMIT 1 FOR UPDATE SKIP LOCKED';
 
                 $taskFinder = MetodoTask::find()
-                    ->select("id")
+                    ->with('cron')
                     ->where(
                         $where,
                         ['time' => $time->format('Y-m-d H:i:s')]
                     );
 
-                $foundTaskId = $taskFinder->scalar();
-
-                // Release the lock because it probably holds more than one row
-                $transaction->rollBack();
-
-                if (!$foundTaskId)
-                {
-                    sleep(1);
-                    continue;
-                }
-
-                $transaction = \Yii::$app->db->beginTransaction();
-
-                // Acquire the lock for a particular row (use of primary key)
                 /** @var MetodoTask $task */
-                $task = MetodoTask::find()
-                    ->with('cron')
-                    ->where('id = :id LIMIT 1 FOR UPDATE SKIP LOCKED', ['id' => $foundTaskId])
-                    ->one();
+                $task = $taskFinder->one();
 
                 if ($task)
                 {
@@ -101,9 +86,11 @@ class SchedulerController extends Controller
                         'status'     => 'running',
                         'start_time' => date('Y-m-d H:i:s')
                     ]);
+                    $transaction->commit();
 
                     if ($task->shouldRescheduleOnStart())
                         $task->reschedule($time);
+
 
                     $cmd = $this->yiiBinPath . ' metodo/worker/work ' . (int)$task->id;
                     //TODO: think about multithreading here, maybe gearman, or just plain old nohup?
@@ -116,7 +103,10 @@ class SchedulerController extends Controller
 
                     if (!$this->rescheduleIfNeeded($task, $taskResult, $time))
                         \Yii::$app->log->logger->log('Failed to reschedule a task: #' . $task->id, Logger::LEVEL_WARNING);
-
+                }
+                else
+                {
+                    // Commit and release lock first, then sleep
                     $transaction->commit();
                 }
                 else
@@ -128,6 +118,11 @@ class SchedulerController extends Controller
             catch (\Exception $e)
             {
                 $transaction->rollBack();
+                $task->updateAttributes([
+                    'status'   => 'scheduled',
+                    'end_time' => date('Y-m-d H:i:s')
+                ]);
+
                 \Yii::$app->log->logger->log($e->getMessage(), Logger::LEVEL_ERROR);
             }
         }

@@ -1,4 +1,4 @@
-<?
+<?php
 namespace enterdev\metodo\controllers;
 
 use yii\console\Controller;
